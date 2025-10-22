@@ -1,4 +1,25 @@
 package com.example.androiduitesting;
+import static androidx.test.espresso.Espresso.onData;
+import static androidx.test.espresso.Espresso.onView;
+import static androidx.test.espresso.action.ViewActions.click;
+import static androidx.test.espresso.assertion.ViewAssertions.doesNotExist;
+import static androidx.test.espresso.assertion.ViewAssertions.matches;
+import static androidx.test.espresso.matcher.ViewMatchers.isDisplayed;
+import static androidx.test.espresso.matcher.ViewMatchers.withId;
+import static androidx.test.espresso.matcher.ViewMatchers.withText;
+import static org.hamcrest.CoreMatchers.instanceOf;
+import static org.hamcrest.CoreMatchers.is;
+import androidx.test.espresso.action.ViewActions;
+import androidx.test.espresso.intent.Intents;
+import androidx.test.ext.junit.rules.ActivityScenarioRule;
+import androidx.test.ext.junit.runners.AndroidJUnit4;
+import static androidx.test.espresso.intent.Intents.intended;
+import static androidx.test.espresso.intent.matcher.IntentMatchers.hasComponent;
+
+import androidx.test.filters.LargeTest;
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.runner.RunWith;
 
 @RunWith(AndroidJUnit4.class)
 @LargeTest
@@ -15,8 +36,7 @@ public class MainActivityTest {
         onView(withId(R.id.editText_name)).perform(ViewActions.typeText("Edmonton"));
         // Click on Confirm
         onView(withId(R.id.button_confirm)).perform(click());
-        // Check if text "Edmonton" is matched with any of the text
-        displayed on the screen
+        // Check if text "Edmonton" is matched with any of the text displayed on the screen
         onView(withText("Edmonton")).check(matches(isDisplayed()));
     }
     @Test
@@ -45,5 +65,54 @@ public class MainActivityTest {
         // If this data matches the text we provided then Voila! Our test should pass
         // You can also use anything() in place of is(instanceOf(String.class))
         onData(is(instanceOf(String.class))).inAdapterView(withId(R.id.city_list)).atPosition(0).check(matches((withText("Edmonton"))));
+    }
+
+    /*
+     * Tests if the activity has been properly switched.
+     * References: https://stackoverflow.com/questions/41467333/espresso-unit-test-case-for-activity-switch-in-android-studio
+     */
+    @Test
+    public void testActivitySwitched() {
+        // Note: Need to use Intents methods or tests don't pass
+        Intents.init();
+        // Add Edmonton to list & click it
+        onView(withId(R.id.button_add)).perform(click());
+        onView(withId(R.id.editText_name)).perform(ViewActions.typeText("Edmonton"));
+        onView(withId(R.id.button_confirm)).perform(click());
+        onView(withText("Edmonton")).perform(click());
+        // Check if activity actually switched
+        intended(hasComponent(ShowActivity.class.getName()));
+        Intents.release();
+    }
+
+    /**
+     * Tests if the city sent to ShowActivity is consistent with MainActivity.
+     */
+    @Test
+    public void testConsistentCityName() {
+        // Add Edmonton to the list
+        onView(withId(R.id.button_add)).perform(click());
+        onView(withId(R.id.editText_name)).perform(ViewActions.typeText("Edmonton"));
+        onView(withId(R.id.button_confirm)).perform(click());
+        // Click on Edmonton & check it exists in ShowActivity
+        onView(withText("Edmonton")).perform(click());
+        onView(withId(R.id.cityPressed)).check(matches(withText("Edmonton")));
+    }
+
+
+    /**
+     * Tests if the 'back' button in ShowActivity actually works
+     */
+    @Test
+    public void testBackButton() {
+        // Add Edmonton to list & click it
+        onView(withId(R.id.button_add)).perform(click());
+        onView(withId(R.id.editText_name)).perform(ViewActions.typeText("Edmonton"));
+        onView(withId(R.id.button_confirm)).perform(click());
+        onView(withText("Edmonton")).perform(click());
+        // Press back button & check if activity is main activity by checking that the buttons match
+        onView(withId(R.id.backButton)).perform(click());
+        onView(withId(R.id.button_add)).check(matches(isDisplayed()));
+        onView(withId(R.id.button_clear)).check(matches(isDisplayed()));
     }
 }
